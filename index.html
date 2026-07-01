@@ -51,8 +51,12 @@
   .sub{
     color:var(--muted);
     font-size:15px;
-    margin:0 0 32px;
+    margin:0 0 16px;
     line-height:1.5;
+  }
+  .sub:last-of-type{ margin-bottom:32px; }
+  .sub.signoff{
+    font-style:italic;
   }
   .tabs{
     display:flex;
@@ -276,9 +280,10 @@
 <div class="sheet">
   <div class="req-number" id="reqNumber">SCHED / REQ-0000</div>
   <h1>Reserve a time to speak with Scott Neidich</h1>
-  <p class="sub">I'd love to take you to lunch or coffee to discuss ways to work together. Please select a time, complete the form, and you'll receive a calendar invitation.</p>
-  <p class="sub">Not seeing a time that works for you? Email me at sdneidich@mesoscale.com or call/text 704-502-1556 </p>
-  <p class="sub">-Scott Neidich, Account Manager Meso Scale Discovery</p>
+  <p class="sub">I'd love to buy you lunch or coffee to discuss your projects and how we at MSD can help. Select a slot below and complete the form, and we'll meet at your choice of place within the RTP area. Need a virtual meeting instead? Just enter &ldquo;virtual&rdquo; for the location.</p>
+  <p class="sub">Not seeing a time that works for you? Email me at sdneidich@mesoscale.com or call/text 704-502-1556.</p>
+  <p class="sub signoff">&mdash; Scott Neidich, Account Manager, Meso Scale Discovery</p>
+
   <div class="tabs" id="tabs">
     <button class="tab" data-type="lunch">Book a Lunch</button>
     <button class="tab" data-type="coffee">Book a Coffee</button>
@@ -301,7 +306,7 @@
       <input id="fEmail" type="email" autocomplete="email" placeholder="jane@company.com">
 
       <label for="fLocation" id="fLocationLabel">Where should we meet?</label>
-      <input id="fLocation" type="text" placeholder="Suggest a spot, or leave it to Scott">
+      <input id="fLocation" type="text" placeholder="Suggest a spot, or type &quot;virtual&quot; for a video call">
 
       <div class="actions">
         <button class="primary" id="confirmBtn">Confirm meeting</button>
@@ -334,17 +339,17 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKpqrZx0ksWQAv
 const TYPE_META = {
   lunch: {
     label: "Lunch",
-    locationPlaceholder: "Suggest a restaurant, or leave it to Scott",
+    locationPlaceholder: "Suggest a restaurant, or type \"virtual\" for a video call",
     reqPrefix: "LUN"
   },
   coffee: {
     label: "Coffee",
-    locationPlaceholder: "Suggest a coffee shop, or leave it to Scott",
+    locationPlaceholder: "Suggest a coffee shop, or type \"virtual\" for a video call",
     reqPrefix: "COF"
   },
   meeting: {
     label: "Meeting",
-    locationPlaceholder: "Suggest a location, or leave it to Scott",
+    locationPlaceholder: "Suggest a location, or type \"virtual\" for a video call",
     reqPrefix: "MTG"
   }
 };
