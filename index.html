@@ -155,7 +155,7 @@
   }
 
   .panel{
-    margin-top:36px;
+    margin:20px 0 30px;
     padding:26px;
     background:var(--paper-raised);
     border:1px solid var(--ink);
@@ -275,8 +275,8 @@
 <body>
 <div class="sheet">
   <div class="req-number" id="reqNumber">SCHED / REQ-0000</div>
-  <h1>Schedule a meeting with Scott</h1>
-  <p class="sub"> Looking forward to speaking with you! Please pick a time below, and Scott will followup to confirm. You'll also get a calendar invitation sent to your email.</p>
+  <h1>Grab time with Scott</h1>
+  <p class="sub">Pick an open slot below. You'll get a calendar invite the moment it's confirmed — no back-and-forth needed.</p>
 
   <div class="tabs" id="tabs">
     <button class="tab" data-type="lunch">Book a Lunch</button>
@@ -286,33 +286,36 @@
 
   <div class="status-line" id="statusLine"></div>
   <div id="slotsContainer"></div>
+  <div id="panelAnchor"></div>
 
-  <div class="panel" id="bookingPanel" style="display:none;">
-    <div class="panel-title">Selected time</div>
-    <div class="panel-slot" id="selectedSlotLabel"></div>
+  <div id="panelWrap">
+    <div class="panel" id="bookingPanel" style="display:none;">
+      <div class="panel-title">Selected time</div>
+      <div class="panel-slot" id="selectedSlotLabel"></div>
 
-    <label for="fName">Your name</label>
-    <input id="fName" type="text" autocomplete="name" placeholder="Jane Rivera">
+      <label for="fName">Your name</label>
+      <input id="fName" type="text" autocomplete="name" placeholder="Jane Rivera">
 
-    <label for="fEmail">Your email</label>
-    <input id="fEmail" type="email" autocomplete="email" placeholder="jane@company.com">
+      <label for="fEmail">Your email</label>
+      <input id="fEmail" type="email" autocomplete="email" placeholder="jane@company.com">
 
-    <label for="fLocation" id="fLocationLabel">Where should we meet?</label>
-    <input id="fLocation" type="text" placeholder="Suggest a spot, or leave it to Scott">
+      <label for="fLocation" id="fLocationLabel">Where should we meet?</label>
+      <input id="fLocation" type="text" placeholder="Suggest a spot, or leave it to Scott">
 
-    <div class="actions">
-      <button class="primary" id="confirmBtn">Confirm meeting</button>
-      <button class="ghost" id="cancelBtn">Cancel</button>
+      <div class="actions">
+        <button class="primary" id="confirmBtn">Confirm meeting</button>
+        <button class="ghost" id="cancelBtn">Cancel</button>
+      </div>
+      <div id="formMsg"></div>
     </div>
-    <div id="formMsg"></div>
-  </div>
 
-  <div class="panel" id="confirmPanel" style="display:none;">
-    <div class="confirm">
-      <div class="req-number" id="confirmedReq">SCHED / REQ-0000</div>
-      <h2>Confirmed</h2>
-      <p>A calendar invite is on its way to both of you, and Scott's been notified by email.</p>
-      <div class="detail" id="confirmDetail"></div>
+    <div class="panel" id="confirmPanel" style="display:none;">
+      <div class="confirm">
+        <div class="req-number" id="confirmedReq">SCHED / REQ-0000</div>
+        <h2>Confirmed</h2>
+        <p>A calendar invite is on its way to both of you, and Scott's been notified by email.</p>
+        <div class="detail" id="confirmDetail"></div>
+      </div>
     </div>
   </div>
 
@@ -371,9 +374,19 @@ document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => setActiveTab(tab.dataset.type));
 });
 
+// Moves the booking/confirm panel back to its default spot (right after the
+// slots list) so it's safe from being wiped out when slotsContainer is
+// rebuilt — call this before ever clearing slotsContainer's contents.
+function resetPanelPosition(){
+  const anchor = document.getElementById('panelAnchor');
+  const wrap = document.getElementById('panelWrap');
+  if (anchor && wrap) anchor.insertAdjacentElement('afterend', wrap);
+}
+
 async function loadSlots(type){
   const statusLine = document.getElementById('statusLine');
   const container = document.getElementById('slotsContainer');
+  resetPanelPosition();
   container.innerHTML = '';
   statusLine.textContent = 'Checking the calendar…';
 
@@ -397,6 +410,7 @@ async function loadSlots(type){
 
 function renderSlots(days){
   const container = document.getElementById('slotsContainer');
+  resetPanelPosition();
   container.innerHTML = '';
 
   if (!days || days.length === 0){
@@ -421,7 +435,7 @@ function renderSlots(days){
       btn.className = 'slot';
       btn.textContent = slot.timeLabel;
       btn.dataset.iso = slot.iso; // unique key so only this exact slot highlights
-      btn.addEventListener('click', () => selectSlot(slot.iso, `${day.dayLabel} · ${slot.timeLabel}`));
+      btn.addEventListener('click', () => selectSlot(slot.iso, `${day.dayLabel} · ${slot.timeLabel}`, group));
       row.appendChild(btn);
     });
 
@@ -430,16 +444,22 @@ function renderSlots(days){
   });
 }
 
-function selectSlot(iso, label){
+function selectSlot(iso, label, dayGroupEl){
   selectedSlot = { iso, label };
   document.querySelectorAll('.slot').forEach(el => {
     el.classList.toggle('selected', el.dataset.iso === iso);
   });
   document.getElementById('selectedSlotLabel').textContent = label;
+
+  // Drop the panel in right after the day group containing the slot just clicked,
+  // instead of leaving it pinned to the bottom of the page.
+  const wrap = document.getElementById('panelWrap');
+  dayGroupEl.insertAdjacentElement('afterend', wrap);
+
   document.getElementById('bookingPanel').style.display = 'block';
   document.getElementById('confirmPanel').style.display = 'none';
   document.getElementById('formMsg').innerHTML = '';
-  document.getElementById('bookingPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function hideBookingPanel(){
@@ -486,6 +506,10 @@ document.getElementById('confirmBtn').addEventListener('click', async () => {
     if (!data.ok){
       if (data.error === 'SLOT_TAKEN'){
         msgEl.innerHTML = `<div class="msg error">That time was just booked by someone else — pick another below.</div>`;
+        loadSlots(currentType);
+        document.getElementById('bookingPanel').style.display = 'none';
+      } else if (data.error === 'TOO_SOON'){
+        msgEl.innerHTML = `<div class="msg error">That time is too close to now — please pick a later slot.</div>`;
         loadSlots(currentType);
         document.getElementById('bookingPanel').style.display = 'none';
       } else {
