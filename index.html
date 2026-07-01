@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedule with Scott Neidich</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1a1a1a;
+    --paper:#f5f5f5;
+    --paper-raised:#ffffff;
+    --line:#dcdcdc;
+    --muted:#666666;
+    --error:#b3261e;
+    --accent:#5e1010;
+    --accent-soft:#f1e4e4;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:48px 20px 80px;
+  }
+  .sheet{
+    width:100%;
+    max-width:600px;
+  }
+  .req-number{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    color:var(--muted);
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(28px, 5vw, 38px);
+    line-height:1.15;
+    margin:0 0 6px;
+  }
+  .sub{
+    color:var(--muted);
+    font-size:15px;
+    margin:0 0 32px;
+    line-height:1.5;
+  }
+  .tabs{
+    display:flex;
+    gap:0;
+    border:1px solid var(--ink);
+    border-radius:3px;
+    overflow:hidden;
+    margin-bottom:36px;
+  }
+  .tab{
+    flex:1;
+    padding:13px 10px;
+    text-align:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    cursor:pointer;
+    background:var(--paper-raised);
+    color:var(--muted);
+    border:none;
+    border-right:1px solid var(--ink);
+    transition:background .15s ease, color .15s ease;
+  }
+  .tab:last-child{border-right:none;}
+  .tab.active{
+    background:var(--accent);
+    color:#fff;
+  }
+  .tab:not(.active):hover{ background:var(--accent-soft); }
+
+  .status-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:18px;
+    min-height:16px;
+  }
+
+  .day-group{ margin-bottom:26px; }
+  .day-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .day-label::after{
+    content:'';
+    flex:1;
+    height:1px;
+    background:var(--line);
+  }
+  .slot-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .slot{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    padding:11px 18px;
+    border:1px solid var(--ink);
+    border-radius:2px;
+    background:var(--paper-raised);
+    cursor:pointer;
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    transition:background .15s ease, color .15s ease, transform .1s ease;
+  }
+  .slot::before{
+    content:'';
+    width:7px;height:7px;
+    border-radius:50%;
+    border:1.5px solid var(--accent);
+    flex-shrink:0;
+  }
+  .slot:hover{
+    background:var(--accent);
+    color:#fff;
+    transform:translateY(-1px);
+  }
+  .slot:hover::before{ border-color:#fff; }
+  .slot.selected{
+    background:var(--accent);
+    color:#fff;
+  }
+  .slot.selected::before{ background:#fff; border-color:#fff; }
+
+  .empty-note{
+    font-size:14px;
+    color:var(--muted);
+    font-style:italic;
+  }
+
+  .panel{
+    margin-top:36px;
+    padding:26px;
+    background:var(--paper-raised);
+    border:1px solid var(--ink);
+    border-radius:3px;
+  }
+  .panel-title{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  .panel-slot{
+    font-family:'Fraunces', serif;
+    font-size:20px;
+    margin-bottom:20px;
+  }
+  label{
+    display:block;
+    font-size:12px;
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:6px;
+    margin-top:16px;
+  }
+  label:first-of-type{ margin-top:0; }
+  input{
+    width:100%;
+    padding:11px 12px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:15px;
+    border:1px solid var(--line);
+    border-radius:2px;
+    background:#fff;
+    color:var(--ink);
+  }
+  input:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+    border-color:var(--accent);
+  }
+  .actions{
+    display:flex;
+    gap:10px;
+    margin-top:24px;
+  }
+  button.primary{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    padding:13px 22px;
+    border-radius:2px;
+    cursor:pointer;
+    flex:1;
+  }
+  button.primary:disabled{ opacity:0.5; cursor:not-allowed; }
+  button.ghost{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    background:transparent;
+    color:var(--muted);
+    border:1px solid var(--line);
+    padding:13px 18px;
+    border-radius:2px;
+    cursor:pointer;
+  }
+  .msg{
+    font-size:13px;
+    margin-top:14px;
+    padding:10px 12px;
+    border-radius:2px;
+  }
+  .msg.error{ background:#fbeae6; color:var(--error); border:1px solid #e4b8ac;}
+  .msg.ok{ background:var(--accent-soft); color:var(--ink); border:1px solid var(--accent);}
+
+  .confirm{
+    text-align:center;
+    padding:20px 8px 4px;
+  }
+  .confirm .req-number{ margin-bottom:14px; }
+  .confirm h2{
+    font-family:'Fraunces', serif;
+    font-size:26px;
+    margin:0 0 10px;
+  }
+  .confirm p{ color:var(--muted); font-size:15px; line-height:1.6; }
+  .confirm .detail{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    color:var(--ink);
+    margin-top:18px;
+    text-align:left;
+    background:var(--accent-soft);
+    border:1px solid var(--accent);
+    padding:16px 18px;
+    border-radius:2px;
+    line-height:1.9;
+  }
+  .footer-note{
+    margin-top:40px;
+    font-size:12px;
+    color:var(--muted);
+    text-align:center;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="req-number" id="reqNumber">SCHED / REQ-0000</div>
+  <h1>Grab time with Scott</h1>
+  <p class="sub">Pick an open slot below. You'll get a calendar invite the moment it's confirmed — no back-and-forth needed.</p>
+
+  <div class="tabs" id="tabs">
+    <button class="tab" data-type="lunch">Book a Lunch</button>
+    <button class="tab" data-type="coffee">Book a Coffee</button>
+    <button class="tab" data-type="meeting">Book a Meeting</button>
+  </div>
+
+  <div class="status-line" id="statusLine"></div>
+  <div id="slotsContainer"></div>
+
+  <div class="panel" id="bookingPanel" style="display:none;">
+    <div class="panel-title">Selected time</div>
+    <div class="panel-slot" id="selectedSlotLabel"></div>
+
+    <label for="fName">Your name</label>
+    <input id="fName" type="text" autocomplete="name" placeholder="Jane Rivera">
+
+    <label for="fEmail">Your email</label>
+    <input id="fEmail" type="email" autocomplete="email" placeholder="jane@company.com">
+
+    <label for="fLocation" id="fLocationLabel">Where should we meet?</label>
+    <input id="fLocation" type="text" placeholder="Suggest a spot, or leave it to Scott">
+
+    <div class="actions">
+      <button class="primary" id="confirmBtn">Confirm meeting</button>
+      <button class="ghost" id="cancelBtn">Cancel</button>
+    </div>
+    <div id="formMsg"></div>
+  </div>
+
+  <div class="panel" id="confirmPanel" style="display:none;">
+    <div class="confirm">
+      <div class="req-number" id="confirmedReq">SCHED / REQ-0000</div>
+      <h2>Confirmed</h2>
+      <p>A calendar invite is on its way to both of you, and Scott's been notified by email.</p>
+      <div class="detail" id="confirmDetail"></div>
+    </div>
+  </div>
+
+  <div class="footer-note">Meso Scale Discovery &middot; Scott Neidich</div>
+</div>
+
+<script>
+/* ====================================================================
+   CONFIGURE THIS: paste your deployed Google Apps Script Web App URL
+   (see setup-guide.md, step 4). It will look like:
+   https://script.google.com/macros/s/AKfycb.../exec
+   ==================================================================== */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKpqrZx0ksWQAvu60VBcC82nr43CSF8I3qRzQhMo5jX-AXtAUnUEjyt53geCq3RJQ/exec";
+
+const TYPE_META = {
+  lunch: {
+    label: "Lunch",
+    locationPlaceholder: "Suggest a restaurant, or leave it to Scott",
+    reqPrefix: "LUN"
+  },
+  coffee: {
+    label: "Coffee",
+    locationPlaceholder: "Suggest a coffee shop, or leave it to Scott",
+    reqPrefix: "COF"
+  },
+  meeting: {
+    label: "Meeting",
+    locationPlaceholder: "Suggest a location, or leave it to Scott",
+    reqPrefix: "MTG"
+  }
+};
+
+let currentType = null;
+let selectedSlot = null; // { iso, label, dayLabel }
+
+const params = new URLSearchParams(window.location.search);
+const requestedType = params.get('type');
+
+function setActiveTab(type){
+  currentType = type;
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.type === type);
+  });
+  const meta = TYPE_META[type];
+  document.getElementById('fLocation').placeholder = meta.locationPlaceholder;
+  document.getElementById('reqNumber').textContent = `SCHED / ${meta.reqPrefix}-${randReq()}`;
+  hideBookingPanel();
+  loadSlots(type);
+}
+
+function randReq(){
+  return Math.floor(1000 + Math.random() * 8999);
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => setActiveTab(tab.dataset.type));
+});
+
+async function loadSlots(type){
+  const statusLine = document.getElementById('statusLine');
+  const container = document.getElementById('slotsContainer');
+  container.innerHTML = '';
+  statusLine.textContent = 'Checking the calendar…';
+
+  if (APPS_SCRIPT_URL.includes('PASTE_YOUR')) {
+    statusLine.textContent = '';
+    container.innerHTML = `<p class="empty-note">This page isn't connected to a calendar yet — set APPS_SCRIPT_URL in booking.html (see setup-guide.md).</p>`;
+    return;
+  }
+
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=slots&type=${type}`);
+    const data = await res.json();
+    statusLine.textContent = '';
+    if (!data.ok) throw new Error(data.error || 'Could not load times');
+    renderSlots(data.days);
+  } catch (err) {
+    statusLine.textContent = '';
+    container.innerHTML = `<p class="empty-note">Couldn't load open times right now. Try refreshing the page.</p>`;
+  }
+}
+
+function renderSlots(days){
+  const container = document.getElementById('slotsContainer');
+  container.innerHTML = '';
+
+  if (!days || days.length === 0){
+    container.innerHTML = `<p class="empty-note">No open times in the next few weeks — reach out to Scott directly.</p>`;
+    return;
+  }
+
+  days.forEach(day => {
+    const group = document.createElement('div');
+    group.className = 'day-group';
+
+    const label = document.createElement('div');
+    label.className = 'day-label';
+    label.textContent = day.dayLabel;
+    group.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'slot-row';
+
+    day.slots.forEach(slot => {
+      const btn = document.createElement('div');
+      btn.className = 'slot';
+      btn.textContent = slot.timeLabel;
+      btn.dataset.iso = slot.iso; // unique key so only this exact slot highlights
+      btn.addEventListener('click', () => selectSlot(slot.iso, `${day.dayLabel} · ${slot.timeLabel}`));
+      row.appendChild(btn);
+    });
+
+    group.appendChild(row);
+    container.appendChild(group);
+  });
+}
+
+function selectSlot(iso, label){
+  selectedSlot = { iso, label };
+  document.querySelectorAll('.slot').forEach(el => {
+    el.classList.toggle('selected', el.dataset.iso === iso);
+  });
+  document.getElementById('selectedSlotLabel').textContent = label;
+  document.getElementById('bookingPanel').style.display = 'block';
+  document.getElementById('confirmPanel').style.display = 'none';
+  document.getElementById('formMsg').innerHTML = '';
+  document.getElementById('bookingPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function hideBookingPanel(){
+  selectedSlot = null;
+  document.getElementById('bookingPanel').style.display = 'none';
+  document.getElementById('confirmPanel').style.display = 'none';
+}
+
+document.getElementById('cancelBtn').addEventListener('click', hideBookingPanel);
+
+document.getElementById('confirmBtn').addEventListener('click', async () => {
+  const name = document.getElementById('fName').value.trim();
+  const email = document.getElementById('fEmail').value.trim();
+  const location = document.getElementById('fLocation').value.trim();
+  const msgEl = document.getElementById('formMsg');
+  msgEl.innerHTML = '';
+
+  if (!name || !email || !selectedSlot){
+    msgEl.innerHTML = `<div class="msg error">Please add your name and email.</div>`;
+    return;
+  }
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!emailOk){
+    msgEl.innerHTML = `<div class="msg error">That email doesn't look quite right.</div>`;
+    return;
+  }
+
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true;
+  btn.textContent = 'Booking…';
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+      body: JSON.stringify({
+        type: currentType,
+        iso: selectedSlot.iso,
+        name, email, location
+      })
+    });
+    const data = await res.json();
+
+    if (!data.ok){
+      if (data.error === 'SLOT_TAKEN'){
+        msgEl.innerHTML = `<div class="msg error">That time was just booked by someone else — pick another below.</div>`;
+        loadSlots(currentType);
+        document.getElementById('bookingPanel').style.display = 'none';
+      } else {
+        msgEl.innerHTML = `<div class="msg error">Something went wrong. Please try again.</div>`;
+      }
+      btn.disabled = false;
+      btn.textContent = 'Confirm meeting';
+      return;
+    }
+
+    document.getElementById('bookingPanel').style.display = 'none';
+    const confirmPanel = document.getElementById('confirmPanel');
+    document.getElementById('confirmedReq').textContent = document.getElementById('reqNumber').textContent;
+    document.getElementById('confirmDetail').innerHTML =
+      `${TYPE_META[currentType].label} · ${selectedSlot.label}<br>` +
+      `With: Scott Neidich &amp; ${name}<br>` +
+      (location ? `Where: ${location}<br>` : '') +
+      `Invite sent to: ${email}`;
+    confirmPanel.style.display = 'block';
+    confirmPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  } catch (err) {
+    msgEl.innerHTML = `<div class="msg error">Something went wrong. Please try again.</div>`;
+    btn.disabled = false;
+    btn.textContent = 'Confirm meeting';
+  }
+});
+
+// init
+setActiveTab(requestedType && TYPE_META[requestedType] ? requestedType : 'lunch');
+</script>
+</body>
+</html>
